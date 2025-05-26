@@ -27,11 +27,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ждем ввода от пользователя
     return TIME_INPUT
     print(TIME_INPUT)
-    chat_id = update.effective_chat.id
-    print(chat_id)
 
 
-# обрабатывает ответ пользователя, содержащий дату и время.
+
+
+# обрабатывает ответ пользователя, содержащий дату и время.Обработчик ввода времени
 async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # получает текст, отправленный пользователем
     user_input = update.message.text
@@ -68,19 +68,33 @@ async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Функция для создания опроса
+# async def send_poll(context: ContextTypes.DEFAULT_TYPE):
+#     chat_id = context.job.chat_id
+#     print(chat_id)
+#     question = "Какой ваш любимый язык программирования?"
+#     options = ["Python", "JavaScript", "C++", "Java", "Другой"]
+#     await context.bot.send_poll(
+#         chat_id=chat_id,
+#         question=question,
+#         options=options,
+#         is_anonymous=False,
+#         allows_multiple_answers=False,
+#     )
 async def send_poll(context: ContextTypes.DEFAULT_TYPE):
-    chat_id = context.job.chat_id
+    job = context.job
+    print(job)
+    chat_id = job.chat_id
     print(chat_id)
-    question = "Какой ваш любимый язык программирования?"
-    options = ["Python", "JavaScript", "C++", "Java", "Другой"]
+
+    question = "Ежедневный опрос: Как ваше настроение сегодня?"
+    options = ["Отлично", "Хорошо", "Нормально", "Плохо"]
+
     await context.bot.send_poll(
         chat_id=chat_id,
         question=question,
         options=options,
         is_anonymous=False,
-        allows_multiple_answers=False,
     )
-
 
 
 
