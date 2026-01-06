@@ -5,7 +5,6 @@ from typing import Final
 from datetime import datetime, time, timezone, timedelta
 from zoneinfo import ZoneInfo
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -16,16 +15,15 @@ TOKEN = None
 with open('token.txt') as f:
     TOKEN = f.read().strip()
 
-# tz_moscow = timezone(timedelta(hours=3))  # Московское время зимой
-tz_moscow = timezone(timedelta(hours=5))  #
-# next_run_at = datetime.combine(now.date(), reminder_time, tzinfo=tz_moscow)
-
+tz_moscow = ZoneInfo('Europe/Moscow')
+current_time = datetime.now().strftime("%H:%M")
+print(current_time)
+print(tz_moscow)
 
 async def send_test_message(update: object, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     chat_id = update.effective_chat.id
     await context.bot.send_message(chat_id=chat_id, text="Тестовая отправка.")
-
 
 async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jobs = context.job_queue.jobs()
@@ -35,13 +33,10 @@ async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = []
     for job in jobs:
-        message.append(f"- Название: {job.name}, Следующее выполнение: {job.next_run_time.astimezone().isoformat()}, Частота: Ежедневно")
+        message.append(f"- Название: {job.name}, Следующее выполнение: {job.next_run_time.astimezone().isoformat()},"
+                       f" Частота: Ежедневно")
 
     await update.message.reply_text("\n".join(message))
-
-
-
-
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -62,6 +57,7 @@ async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     user_input = update.message.text.strip()
     chat_id = update.effective_chat.id
+
     print(f"User Input: {user_input}, Chat ID: {chat_id}")
 
     try:
@@ -74,17 +70,14 @@ async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Определяем ближайшее подходящее время
         now = datetime.now(tz_moscow)
-        # next_run_at = datetime.combine(now.date(), reminder_time, tzinfo=tz_moscow)
-        next_run_at = datetime.combine(datetime.now(tz_moscow).date(), reminder_time, tzinfo=tz_moscow)
-        utc_next_run_at = next_run_at.astimezone(timezone.utc)
+        next_run_at = datetime.combine(now.date(), reminder_time, tzinfo=tz_moscow)
         if next_run_at < now:
             next_run_at += timedelta(days=1)  # Переносим опрос на завтра
 
         # Ставим ежедневный опрос в заданное время
         context.job_queue.run_daily(
             send_poll,
-            # time=reminder_time,
-            time=next_run_at,
+            time=next_run_at.time(),
             days=(0, 1, 2, 3, 4, 5, 6),
             chat_id=chat_id,
             name=f"{chat_id}-daily-poll",
