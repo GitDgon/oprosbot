@@ -4,7 +4,6 @@ from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandl
 from typing import Final
 # from datetime import datetime, time, timedelta
 from datetime import datetime, time, timezone, timedelta
-
 from zoneinfo import ZoneInfo
 
 # Настройка структурированного логирования
@@ -49,40 +48,6 @@ async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("📋 Запланированные опросы:\n" + "\n".join(message))
 
-
-
-# async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     jobs = context.job_queue.jobs()
-#     if not jobs:
-#         await update.message.reply_text("📭 Список заданий пуст.")
-#         return
-#
-#     message = []
-#     for job in jobs:
-#         chat_id = job.chat_id or "Неизвестно"
-#         # ✅ Извлекаем время опроса из имени или данных
-#         if "daily-poll" in job.name:
-#             # Время пользователя хранится в job.callback_kwargs или нужно парсить
-#             next_run_msk = job.next_run_time.astimezone(tz_moscow).strftime('%H:%M')
-#             message.append(
-#                 f"• **{chat_id}-daily-poll**: запуск **{next_run_msk} MSK** ({job.next_run_time.astimezone(tz_moscow).strftime('%d.%m.%Y')})")
-#
-#     await update.message.reply_text("📋 Запланированные опросы:\n" + "\n".join(message))
-#
-
-# async def list_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     """Показать все запланированные задания"""
-#     jobs = context.job_queue.jobs()
-#     if not jobs:
-#         await update.message.reply_text("📭 Список заданий пуст.")
-#         return
-#
-#     message = []
-#     for job in jobs:
-#         next_run = job.next_run_time.astimezone(tz_moscow) if job.next_run_time else "Не задано"
-#         message.append(f"• {job.name}: {next_run.strftime('%H:%M %d.%m.%Y')} (ежедневно)")
-#
-#     await update.message.reply_text("📋 Запланированные опросы:\n" + "\n".join(message))
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -143,92 +108,6 @@ async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except ValueError:
         await update.message.reply_text("❌ Формат: **ЧЧ:ММ** (09:23)")
-
-
-# async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     user_input = update.message.text.strip()
-#     chat_id = update.effective_chat.id
-#     logger.info(f"Ввод времени '{user_input}' от chat_id: {chat_id}")
-#
-#     try:
-#         # ✅ ПАРСИМ время как MSK (не UTC!)
-#         reminder_time = datetime.strptime(user_input, "%H:%M").time()
-#
-#         # ✅ Текущее время ВСЕГДА в MSK
-#         now = datetime.now(tz_moscow)
-#         next_run_at = datetime.combine(now.date(), reminder_time, tzinfo=tz_moscow)
-#
-#         if next_run_at <= now:
-#             next_run_at += timedelta(days=1)
-#
-#         # ✅ Удаляем старые задания
-#         current_jobs = context.job_queue.get_jobs_by_name(f"{chat_id}-daily-poll")
-#         for job in current_jobs:
-#             job.schedule_removal()
-#
-#         # ✅ run_daily с правильным временем MSK
-#         context.job_queue.run_daily(
-#             send_poll,
-#             time=reminder_time,  # Это время пользователя (MSK)
-#             days=(0, 1, 2, 3, 4, 5, 6),
-#             chat_id=chat_id,
-#             name=f"{chat_id}-daily-poll",
-#         )
-#
-#         logger.info(f"Опрос запланирован для {chat_id} на MSK {reminder_time}")
-#         await update.message.reply_text(
-#             f"✅ Опрос настроен на **{user_input} MSK** ежедневно!\n"
-#             f"📅 Первая отправка: **{next_run_at.astimezone(tz_moscow).strftime('%H:%M %d.%m.%Y')}**"
-#         )
-#
-#     except ValueError:
-#         await update.message.reply_text("❌ Используйте формат **ЧЧ:ММ** (19:18)")
-
-
-# async def receive_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     """Обработка ввода времени и планирование опроса"""
-#     user_input = update.message.text.strip()
-#     chat_id = update.effective_chat.id
-#     logger.info(f"Ввод времени '{user_input}' от chat_id: {chat_id}")
-#
-#     try:
-#         # Парсинг времени
-#         reminder_time = datetime.strptime(user_input, "%H:%M").time()
-#
-#         # Расчёт времени следующего запуска
-#         now = datetime.now(tz_moscow)
-#         next_run_at = datetime.combine(now.date(), reminder_time, tzinfo=tz_moscow)
-#         if next_run_at <= now:
-#             next_run_at += timedelta(days=1)
-#
-#         # Удаляем старое задание для этого чата
-#         current_jobs = context.job_queue.get_jobs_by_name(f"{chat_id}-daily-poll")
-#         for job in current_jobs:
-#             job.schedule_removal()
-#
-#         # Планируем новое ежедневное задание
-#         context.job_queue.run_daily(
-#             send_poll,
-#             time=reminder_time,
-#             days=(0, 1, 2, 3, 4, 5, 6),  # Все дни недели
-#             chat_id=chat_id,
-#             name=f"{chat_id}-daily-poll",
-#         )
-#
-#         logger.info(f"Ежедневный опрос запланирован для чата {chat_id} на {reminder_time}")
-#         await update.message.reply_text(
-#             f"✅ **Опрос настроен!**\n"
-#             f"⏰ Время: **{user_input}** (ежедневно)\n"
-#             f"📅 Первая отправка: **{next_run_at.astimezone(tz_moscow).strftime('%H:%M %d.%m.%Y')}**"
-#         )
-#
-#     except ValueError:
-#         logger.warning(f"Неверный формат времени '{user_input}' от chat_id: {chat_id}")
-#         await update.message.reply_text(
-#             "❌ **Неверный формат времени!**\n\n"
-#             "Используйте формат **ЧЧ:ММ**\n"
-#             "Примеры: `09:00`, `14:30`, `22:45`"
-#         )
 
 
 async def send_poll(context: ContextTypes.DEFAULT_TYPE):
